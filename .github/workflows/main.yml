@@ -1,50 +1,32 @@
-name: Build APK
+name: Build Jarvis APK
 
 on:
   push:
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Kodni yuklab olish
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Java 17 ni sozlash
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
+          java-version: '17'
+          distribution: 'temurin'
 
-      - name: Accept Android licenses
-        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+      - name: Gradlew ga ruxsat berish
+        run: chmod +x gradlew
 
-      - uses: gradle/actions/setup-gradle@v4
+      - name: APK ni yig'ish
+        run: ./gradlew assembleDebug
+
+      - name: Tayyor APK ni yuklash
+        uses: actions/upload-artifact@v4
         with:
-          gradle-version: 8.9
-
-      - name: Unzip project
-        run: unzip -q "*.zip" -d project
-
-      - name: Fix JVM target
-        run: |
-          cat >> project/app/build.gradle.kts <<'EOF'
-
-          android {
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
-              kotlinOptions {
-                  jvmTarget = "17"
-              }
-          }
-          EOF
-
-      - name: Build debug APK
-        working-directory: project
-        run: gradle assembleDebug --no-daemon
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: JarvisAI-debug-apk
-          path: project/app/build/outputs/apk/debug/app-debug.apk
+          name: jarvis-app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
